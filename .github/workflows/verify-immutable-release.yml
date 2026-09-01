@@ -1,0 +1,58 @@
+name: Verify immutable public release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Published release tag to verify
+        required: true
+        default: v0.1.0
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ inputs.tag }}
+      WORK_DIR: /tmp/gooo-semantic-denominator-projector-release-verification-${{ github.run_id }}
+    steps:
+      - name: Checkout the published tag
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag }}
+          fetch-depth: 0
+      - name: Verify immutable release and public asset digests
+        shell: bash
+        run: |
+          set -euo pipefail
+          repo="$GITHUB_REPOSITORY"
+          mkdir -p "$WORK_DIR/downloads"
+          test "$(git cat-file -t "$TAG^{tag}")" = tag
+          tag_commit=$(git rev-list -n 1 "$TAG")
+          release=$(gh api "repos/$repo/releases/tags/$TAG")
+          jq -e --arg tag "$TAG" --argjson commit "null" '.tag_name == $tag and .draft == false and .immutable == true' <<< "$release" >/dev/null
+          assets=$(gh api "repos/$repo/releases/$(jq -r .id <<< "$release")/assets?per_page=100")
+          test "$(jq 'length' <<< "$assets")" = "10"
+          while IFS=$'\t' read -r asset_id asset_name server_size server_digest; do
+            gh api -H 'Accept: application/octet-stream' "repos/$repo/releases/assets/$asset_id" > "$WORK_DIR/downloads/$asset_name"
+            local_size=$(wc -c < "$WORK_DIR/downloads/$asset_name" | tr -d ' ')
+            local_digest="sha256:$(sha256sum "$WORK_DIR/downloads/$asset_name" | awk '{print $1}')"
+            test "$local_size" = "$server_size"
+            test "$local_digest" = "$server_digest"
+          done < <(jq -r '.[] | [.id,.name,.size,.digest] | @tsv' <<< "$assets")
+          runs=$(gh api --paginate "repos/$repo/actions/runs?event=push&branch=main&per_page=100")
+          main_run=$(jq -c --arg sha "$tag_commit" '[.workflow_runs[] | select(.name == "Semantic denominator projector CI" and .head_sha == $sha and .conclusion == "success")] | sort_by(.id) | last' <<< "$runs")
+          test "$main_run" != null
+          jq -S -n --arg tag "$TAG" --arg commit "$tag_commit" --argjson release_id "$(jq -r .id <<< "$release")" --arg run_id "$(jq -r .id <<< "$main_run")" --slurpfile release <(printf '%s' "$release") --slurpfile assets <(printf '%s' "$assets") '{schema:"gooo/semantic-denominator-projector/release-verification/v1",tag:$tag,commit_sha:$commit,release_id:$release_id,immutable:$release[0].immutable,main_ci_run_id:($run_id|tonumber),assets:($assets[0]|map({id,name,size,digest})),repository_writes:0}' > "$WORK_DIR/release-verification.json"
+          cat "$WORK_DIR/release-verification.json"
+      - name: Upload verification evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: gooo-semantic-denominator-projector-release-verification-${{ github.run_id }}
+          path: ${{ env.WORK_DIR }}/release-verification.json
+          if-no-files-found: error

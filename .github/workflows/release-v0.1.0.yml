@@ -2,7 +2,7 @@ name: Immutable v0.1.0 release
 
 on:
   push:
-    tags: [v0.1.0]
+    tags: ['v0.1.0']
 
 permissions:
   actions: read
@@ -14,7 +14,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       TAG: v0.1.0
-      WORK_DIR: ${{ runner.temp }}/gooo-semantic-denominator-projector-release-${{ github.run_id }}
+      WORK_DIR: /tmp/gooo-semantic-denominator-projector-release-${{ github.run_id }}
     steps:
       - name: Checkout annotated tag
         uses: actions/checkout@v5

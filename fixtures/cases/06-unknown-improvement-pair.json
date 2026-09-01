@@ -1,0 +1,9 @@
+{
+  "case_id": "unknown-improvement-pair",
+  "expected_decision": "UNKNOWN",
+  "top_level_decision": "UNKNOWN",
+  "observed_denominator": 12,
+  "observed_activities": ["ParseSemanticGraph", "BindStableSemanticIDs", "BindSemanticEvidence", "EstablishDenominator", "SelectProofDistribution", "SelectIndicatorDistribution", "ProjectActivityMapping", "ClassifyUnknownCoverage", "ClassifyRefutedCoverage", "ProjectAssertions", "ProjectReport", "VerifyDeterministicReplay"],
+  "claim": {"stage": "REPORT", "step": "PROJECT_REPORT_PROJECTION", "reason": "EXACT_BEFORE_AFTER_PAIR_ABSENT", "unknown_class": "IMPROVEMENT_UNPROVEN", "next_operation": "PROVIDE_MATCHED_INTEGER_PAIR", "blocked_by": ["improvement.before", "improvement.after"]},
+  "external_user_utility_evidence": true
+}

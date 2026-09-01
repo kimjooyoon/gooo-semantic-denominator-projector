@@ -1,0 +1,60 @@
+package semanticdenominatorprojector
+namespace semanticdenominatorprojector
+
+graph id=gooo://semantic-denominator-projector/graph/v1 release=v0.1.0 precedence=REFUTED,UNKNOWN,CLOSED external_required_gates=0 repository_writes=0
+
+artifact ordinal=1 name=semantic-denominator.json
+artifact ordinal=2 name=semantic-distribution.json
+artifact ordinal=3 name=generated-assertions.json
+artifact ordinal=4 name=projection-events.ndjson
+artifact ordinal=5 name=replay-receipt.json
+artifact ordinal=6 name=report.md
+
+activity ordinal=1 id=gooo.activity.semantic-denominator-projector.parse-semantic-graph name=ParseSemanticGraph proof=FOUNDATION indicator=DRIVER artifact=semantic-ir authority=READ_ONLY
+activity ordinal=2 id=gooo.activity.semantic-denominator-projector.bind-stable-semantic-ids name=BindStableSemanticIDs proof=FOUNDATION indicator=DRIVER artifact=stable-id-bindings authority=READ_ONLY
+activity ordinal=3 id=gooo.activity.semantic-denominator-projector.bind-semantic-evidence name=BindSemanticEvidence proof=FOUNDATION indicator=DRIVER artifact=source-evidence-bindings authority=READ_ONLY
+activity ordinal=4 id=gooo.activity.semantic-denominator-projector.establish-denominator name=EstablishDenominator proof=FOUNDATION indicator=DRIVER artifact=semantic-denominator.json authority=READ_ONLY
+activity ordinal=5 id=gooo.activity.semantic-denominator-projector.select-proof-distribution name=SelectProofDistribution proof=COHERENCE indicator=OUTCOME artifact=semantic-distribution.json authority=READ_ONLY
+activity ordinal=6 id=gooo.activity.semantic-denominator-projector.select-indicator-distribution name=SelectIndicatorDistribution proof=COHERENCE indicator=OUTCOME artifact=semantic-distribution.json authority=READ_ONLY
+activity ordinal=7 id=gooo.activity.semantic-denominator-projector.project-activity-mapping name=ProjectActivityMapping proof=COHERENCE indicator=OUTCOME artifact=projection-events.ndjson authority=READ_ONLY
+activity ordinal=8 id=gooo.activity.semantic-denominator-projector.classify-unknown-coverage name=ClassifyUnknownCoverage proof=COHERENCE indicator=OUTCOME artifact=semantic-distribution.json authority=READ_ONLY
+activity ordinal=9 id=gooo.activity.semantic-denominator-projector.classify-refuted-coverage name=ClassifyRefutedCoverage proof=REGRESSION indicator=GUARDRAIL artifact=generated-assertions.json authority=READ_ONLY
+activity ordinal=10 id=gooo.activity.semantic-denominator-projector.project-assertions name=ProjectAssertions proof=REGRESSION indicator=GUARDRAIL artifact=generated-assertions.json authority=READ_ONLY
+activity ordinal=11 id=gooo.activity.semantic-denominator-projector.project-report name=ProjectReport proof=REGRESSION indicator=GUARDRAIL artifact=report.md authority=READ_ONLY
+activity ordinal=12 id=gooo.activity.semantic-denominator-projector.verify-deterministic-replay name=VerifyDeterministicReplay proof=REGRESSION indicator=GUARDRAIL artifact=replay-receipt.json authority=READ_ONLY
+
+cell ordinal=1 id=SOURCE_GRAPH_PARSED activity=ParseSemanticGraph stage=SOURCE step=PARSE_SEMANTIC_GRAPH proof=FOUNDATION indicator=DRIVER depends_on=-
+cell ordinal=2 id=STABLE_IDS_BOUND activity=BindStableSemanticIDs stage=IR step=BIND_STABLE_SEMANTIC_IDS proof=FOUNDATION indicator=DRIVER depends_on=SOURCE_GRAPH_PARSED
+cell ordinal=3 id=EVIDENCE_BOUND activity=BindSemanticEvidence stage=EVIDENCE step=BIND_SEMANTIC_EVIDENCE proof=FOUNDATION indicator=DRIVER depends_on=STABLE_IDS_BOUND
+cell ordinal=4 id=DENOMINATOR_ESTABLISHED activity=EstablishDenominator stage=CONTRACT step=ESTABLISH_SEMANTIC_DENOMINATOR proof=FOUNDATION indicator=DRIVER depends_on=EVIDENCE_BOUND
+cell ordinal=5 id=PROOF_DISTRIBUTION_SELECTED activity=SelectProofDistribution stage=PROJECTION step=SELECT_PROOF_DISTRIBUTION proof=COHERENCE indicator=OUTCOME depends_on=DENOMINATOR_ESTABLISHED
+cell ordinal=6 id=INDICATOR_DISTRIBUTION_SELECTED activity=SelectIndicatorDistribution stage=PROJECTION step=SELECT_INDICATOR_DISTRIBUTION proof=COHERENCE indicator=OUTCOME depends_on=PROOF_DISTRIBUTION_SELECTED
+cell ordinal=7 id=ACTIVITY_MAPPING_PROJECTED activity=ProjectActivityMapping stage=PROJECTION step=PROJECT_ACTIVITY_MAPPING proof=COHERENCE indicator=OUTCOME depends_on=INDICATOR_DISTRIBUTION_SELECTED
+cell ordinal=8 id=UNKNOWN_COVERAGE_CLASSIFIED activity=ClassifyUnknownCoverage stage=CLASSIFICATION step=CLASSIFY_UNKNOWN_COVERAGE proof=COHERENCE indicator=OUTCOME depends_on=ACTIVITY_MAPPING_PROJECTED
+cell ordinal=9 id=REFUTED_COVERAGE_CLASSIFIED activity=ClassifyRefutedCoverage stage=CLASSIFICATION step=CLASSIFY_REFUTED_COVERAGE proof=REGRESSION indicator=GUARDRAIL depends_on=UNKNOWN_COVERAGE_CLASSIFIED
+cell ordinal=10 id=ASSERTIONS_PROJECTED activity=ProjectAssertions stage=PROJECTION step=PROJECT_ASSERTION_PROJECTION proof=REGRESSION indicator=GUARDRAIL depends_on=REFUTED_COVERAGE_CLASSIFIED
+cell ordinal=11 id=REPORT_PROJECTED activity=ProjectReport stage=REPORT step=PROJECT_REPORT_PROJECTION proof=REGRESSION indicator=GUARDRAIL depends_on=ASSERTIONS_PROJECTED
+cell ordinal=12 id=REPLAY_VERIFIED activity=VerifyDeterministicReplay stage=REPLAY step=VERIFY_ORDER_PERTURBED_REPLAY proof=REGRESSION indicator=GUARDRAIL depends_on=REPORT_PROJECTED
+
+rule id=duplicate_stable_id cell=STABLE_IDS_BOUND state=REFUTED reason=DUPLICATE_STABLE_ID unknown_class=NONE next_operation=RESTORE_UNIQUE_STABLE_IDS
+rule id=missing_activity cell=EVIDENCE_BOUND state=UNKNOWN reason=MISSING_ACTIVITY_EVIDENCE unknown_class=DIRECT_MISSING next_operation=PROVIDE_MISSING_ACTIVITY_EVIDENCE
+rule id=stale_expected_denominator cell=DENOMINATOR_ESTABLISHED state=REFUTED reason=STALE_EXPECTED_DENOMINATOR unknown_class=NONE next_operation=RESTORE_GRAPH_DERIVED_DENOMINATOR
+rule id=contradictory_state cell=REFUTED_COVERAGE_CLASSIFIED state=REFUTED reason=CONTRADICTORY_STATE unknown_class=NONE next_operation=RESTORE_CONTRADICTORY_ASSERTION
+rule id=malformed_unknown cell=UNKNOWN_COVERAGE_CLASSIFIED state=UNKNOWN reason=MALFORMED_UNKNOWN_CLAIM unknown_class=SCHEMA_MISSING next_operation=PROVIDE_SIX_FIELD_UNKNOWN_CLAIM
+rule id=unknown_top_level_decision cell=SOURCE_GRAPH_PARSED state=UNKNOWN reason=UNKNOWN_TOP_LEVEL_DECISION unknown_class=AMBIGUOUS next_operation=PROVIDE_RECOGNIZED_TOP_LEVEL_DECISION
+rule id=external_user_utility_absent cell=EVIDENCE_BOUND state=UNKNOWN reason=EXTERNAL_USER_UTILITY_EVIDENCE_ABSENT unknown_class=EXTERNAL_EVIDENCE_MISSING next_operation=PROVIDE_EXTERNAL_USER_UTILITY_EVIDENCE
+rule id=unbounded_input cell=EVIDENCE_BOUND state=UNKNOWN reason=INPUT_IS_UNBOUNDED unknown_class=UNBOUNDED next_operation=BOUND_INPUT_SCOPE
+rule id=improvement_pair_absent cell=REPORT_PROJECTED state=UNKNOWN reason=EXACT_BEFORE_AFTER_PAIR_ABSENT unknown_class=IMPROVEMENT_UNPROVEN next_operation=PROVIDE_MATCHED_INTEGER_PAIR
+
+case ordinal=1 id=closed-source-grounding expected=CLOSED
+case ordinal=2 id=closed-derived-denominator expected=CLOSED
+case ordinal=3 id=closed-stable-projection expected=CLOSED
+case ordinal=4 id=closed-deterministic-replay expected=CLOSED
+case ordinal=5 id=unknown-external-user-utility expected=UNKNOWN
+case ordinal=6 id=unknown-improvement-pair expected=UNKNOWN
+case ordinal=7 id=unknown-unbounded-input expected=UNKNOWN
+case ordinal=8 id=unknown-top-level-and-malformed-unknown expected=UNKNOWN
+case ordinal=9 id=refuted-duplicate-stable-id expected=REFUTED
+case ordinal=10 id=refuted-stale-expected-denominator expected=REFUTED
+case ordinal=11 id=refuted-contradictory-state expected=REFUTED
+case ordinal=12 id=refuted-missing-activity expected=REFUTED

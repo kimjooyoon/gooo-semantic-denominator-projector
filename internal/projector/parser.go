@@ -347,10 +347,20 @@ func LoadCases(directory string, graph SemanticGraph) ([]CaseInput, error) {
 }
 
 func stripComment(line string) string {
-	if index := strings.Index(line, "//"); index >= 0 {
-		return line[:index]
+	for offset := 0; ; {
+		index := strings.Index(line[offset:], "//")
+		if index < 0 {
+			return line
+		}
+		index += offset
+		if index == 0 || line[index-1] == ' ' || line[index-1] == '\t' {
+			return line[:index]
+		}
+		offset = index + 2
+		if offset >= len(line) {
+			return line
+		}
 	}
-	return line
 }
 
 func keyValues(fields []string) (map[string]string, error) {

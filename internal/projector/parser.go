@@ -73,11 +73,11 @@ func parseGraph(path string, raw []byte) (SemanticGraph, error) {
 			precedence := splitList(values["precedence"])
 			gates, err := integerValue(values, "external_required_gates")
 			if err != nil {
-				return fmt.Errorf("line %d: %w", lineNumber, err)
+				return SemanticGraph{}, fmt.Errorf("line %d: %w", lineNumber, err)
 			}
 			writes, err := integerValue(values, "repository_writes")
 			if err != nil {
-				return fmt.Errorf("line %d: %w", lineNumber, err)
+				return SemanticGraph{}, fmt.Errorf("line %d: %w", lineNumber, err)
 			}
 			graph.GraphID = values["id"]
 			graph.Release = values["release"]

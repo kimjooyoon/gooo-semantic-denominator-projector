@@ -1,0 +1,4 @@
+# Generated output belongs to a caller-owned temporary directory.
+/semantic-output/
+/ci-evidence/
+*.coverage

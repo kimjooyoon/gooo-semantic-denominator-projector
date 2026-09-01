@@ -131,7 +131,7 @@ func printJSON(value any) {
 	fmt.Println(string(raw))
 }
 
-func fatal(message string) {
-	fmt.Fprintln(os.Stderr, message)
+func fatal(format string, values ...any) {
+	fmt.Fprintf(os.Stderr, format+"\n", values...)
 	os.Exit(1)
 }

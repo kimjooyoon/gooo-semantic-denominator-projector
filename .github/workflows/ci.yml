@@ -24,25 +24,12 @@ jobs:
           cache: false
       - name: Verify declared toolchain
         run: test "$(go env GOVERSION)" = "go1.27.0"
-      - name: Capture formatter diff for remote repair
-        shell: bash
-        run: |
-          set -euo pipefail
-          files=$(git ls-files '*.go')
-          gofmt -d $files > "$RUNNER_TEMP/gofmt.diff"
       - name: Verify Go formatting
         shell: bash
         run: |
           set -euo pipefail
           files=$(gofmt -l $(git ls-files '*.go'))
           test -z "$files"
-      - name: Upload formatter diff
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: gooo-semantic-denominator-projector-gofmt-diff-${{ env.SUBJECT_SHA }}
-          path: ${{ runner.temp }}/gofmt.diff
-          if-no-files-found: error
       - name: Prepare caller-owned directories
         shell: bash
         run: |

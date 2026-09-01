@@ -133,9 +133,9 @@ func evaluateImprovement(ir SemanticIR, input CaseInput, decision string) Improv
 
 func unknownImprovement(ir SemanticIR, before, after *int) ImprovementResult {
 	return ImprovementResult{
-		State: DecisionUnknown,
-		Before: before,
-		After: after,
+		State:   DecisionUnknown,
+		Before:  before,
+		After:   after,
 		Unknown: unknownForRule(ir.Graph, "improvement_pair_absent", []string{"improvement.before", "improvement.after"}),
 	}
 }
@@ -145,7 +145,7 @@ func evaluateUtility(ir SemanticIR, input CaseInput) UtilityResult {
 		return UtilityResult{State: DecisionClosed}
 	}
 	return UtilityResult{
-		State: DecisionUnknown,
+		State:   DecisionUnknown,
 		Unknown: unknownForRule(ir.Graph, "external_user_utility_absent", []string{"external_user_utility_evidence"}),
 	}
 }

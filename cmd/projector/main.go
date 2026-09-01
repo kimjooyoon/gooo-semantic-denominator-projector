@@ -78,21 +78,21 @@ func generate(args []string, conformance bool) {
 		}
 	}
 	printJSON(struct {
-		Decision         string `json:"decision"`
-		ScenarioDenominator int `json:"scenario_denominator"`
-		Closed           int    `json:"closed"`
-		Unknown          int    `json:"unknown"`
-		Refuted          int    `json:"refuted"`
-		ReplayMatch      bool   `json:"replay_match"`
-		OutputDirectory  string `json:"output_directory"`
+		Decision            string `json:"decision"`
+		ScenarioDenominator int    `json:"scenario_denominator"`
+		Closed              int    `json:"closed"`
+		Unknown             int    `json:"unknown"`
+		Refuted             int    `json:"refuted"`
+		ReplayMatch         bool   `json:"replay_match"`
+		OutputDirectory     string `json:"output_directory"`
 	}{
-		Decision: "CONFORMANT",
+		Decision:            "CONFORMANT",
 		ScenarioDenominator: result.Denominator.ScenarioDenominator,
-		Closed: result.Denominator.StateCounts.Closed,
-		Unknown: result.Denominator.StateCounts.Unknown,
-		Refuted: result.Denominator.StateCounts.Refuted,
-		ReplayMatch: result.Replay.Match,
-		OutputDirectory: filepath.Clean(values.output),
+		Closed:              result.Denominator.StateCounts.Closed,
+		Unknown:             result.Denominator.StateCounts.Unknown,
+		Refuted:             result.Denominator.StateCounts.Refuted,
+		ReplayMatch:         result.Replay.Match,
+		OutputDirectory:     filepath.Clean(values.output),
 	})
 }
 

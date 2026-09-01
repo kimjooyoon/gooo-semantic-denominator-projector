@@ -7,17 +7,17 @@ import (
 )
 
 const (
-	GraphSchema       = "gooo/semantic-denominator-projector/semantic-graph/v1"
-	IRSchema          = "gooo/semantic-denominator-projector/semantic-ir/v1"
-	DenominatorSchema = "gooo/semantic-denominator-projector/semantic-denominator/v1"
+	GraphSchema        = "gooo/semantic-denominator-projector/semantic-graph/v1"
+	IRSchema           = "gooo/semantic-denominator-projector/semantic-ir/v1"
+	DenominatorSchema  = "gooo/semantic-denominator-projector/semantic-denominator/v1"
 	DistributionSchema = "gooo/semantic-denominator-projector/semantic-distribution/v1"
-	AssertionSchema   = "gooo/semantic-denominator-projector/generated-assertions/v1"
-	EventSchema       = "gooo/semantic-denominator-projector/projection-event/v1"
-	ReplaySchema      = "gooo/semantic-denominator-projector/replay-receipt/v1"
-	DecisionClosed   = "CLOSED"
-	DecisionUnknown  = "UNKNOWN"
-	DecisionRefuted  = "REFUTED"
-	ToolchainVersion = "go1.27.0"
+	AssertionSchema    = "gooo/semantic-denominator-projector/generated-assertions/v1"
+	EventSchema        = "gooo/semantic-denominator-projector/projection-event/v1"
+	ReplaySchema       = "gooo/semantic-denominator-projector/replay-receipt/v1"
+	DecisionClosed     = "CLOSED"
+	DecisionUnknown    = "UNKNOWN"
+	DecisionRefuted    = "REFUTED"
+	ToolchainVersion   = "go1.27.0"
 )
 
 var RequiredArtifactNames = []string{
@@ -94,17 +94,17 @@ type CaseContract struct {
 }
 
 type SemanticGraph struct {
-	Schema                 string                    `json:"schema"`
-	GraphID                string                    `json:"graph_id"`
-	Release                string                    `json:"release"`
-	Precedence             []string                  `json:"precedence"`
-	ExternalRequiredGates  int                       `json:"external_required_gates"`
-	RepositoryWrites       int                       `json:"repository_writes"`
-	Artifacts              []ArtifactDecl            `json:"artifacts"`
-	Activities             []ActivityDecl            `json:"activities"`
-	Cells                  []CellDecl                `json:"cells"`
-	Rules                  map[string]RuleDecl       `json:"rules"`
-	Cases                  []CaseContract             `json:"cases"`
+	Schema                string              `json:"schema"`
+	GraphID               string              `json:"graph_id"`
+	Release               string              `json:"release"`
+	Precedence            []string            `json:"precedence"`
+	ExternalRequiredGates int                 `json:"external_required_gates"`
+	RepositoryWrites      int                 `json:"repository_writes"`
+	Artifacts             []ArtifactDecl      `json:"artifacts"`
+	Activities            []ActivityDecl      `json:"activities"`
+	Cells                 []CellDecl          `json:"cells"`
+	Rules                 map[string]RuleDecl `json:"rules"`
+	Cases                 []CaseContract      `json:"cases"`
 }
 
 type SemanticIR struct {
@@ -146,19 +146,19 @@ type ImprovementInput struct {
 }
 
 type CaseInput struct {
-	CaseID                    string              `json:"case_id"`
-	ExpectedDecision          string              `json:"expected_decision"`
-	TopLevelDecision          string              `json:"top_level_decision"`
-	ObservedDenominator       *int                `json:"observed_denominator"`
-	ObservedActivities        []string            `json:"observed_activities"`
-	SemanticNodes             []SemanticNodeInput `json:"semantic_nodes"`
-	Claim                     *UnknownClaim       `json:"claim"`
-	ContradictoryState        bool                `json:"contradictory_state"`
-	MalformedUnknown          bool                `json:"malformed_unknown"`
-	UnboundedInput            bool                `json:"unbounded_input"`
-	ExternalUserUtility       *bool               `json:"external_user_utility_evidence"`
-	Improvement               *ImprovementInput   `json:"improvement"`
-	FixturePath               string              `json:"-"`
+	CaseID              string              `json:"case_id"`
+	ExpectedDecision    string              `json:"expected_decision"`
+	TopLevelDecision    string              `json:"top_level_decision"`
+	ObservedDenominator *int                `json:"observed_denominator"`
+	ObservedActivities  []string            `json:"observed_activities"`
+	SemanticNodes       []SemanticNodeInput `json:"semantic_nodes"`
+	Claim               *UnknownClaim       `json:"claim"`
+	ContradictoryState  bool                `json:"contradictory_state"`
+	MalformedUnknown    bool                `json:"malformed_unknown"`
+	UnboundedInput      bool                `json:"unbounded_input"`
+	ExternalUserUtility *bool               `json:"external_user_utility_evidence"`
+	Improvement         *ImprovementInput   `json:"improvement"`
+	FixturePath         string              `json:"-"`
 }
 
 type Issue struct {
@@ -169,29 +169,29 @@ type Issue struct {
 }
 
 type ActivityProjection struct {
-	CellOrdinal       int            `json:"cell_ordinal"`
-	CellID            string         `json:"cell_id"`
-	ActivityStableID  string         `json:"activity_stable_id"`
-	Activity          string         `json:"activity"`
-	Artifact          string         `json:"artifact"`
-	Proof             string         `json:"proof_choice"`
-	Indicator         string         `json:"indicator_class"`
-	Source            SourceLocation `json:"source_location"`
+	CellOrdinal      int            `json:"cell_ordinal"`
+	CellID           string         `json:"cell_id"`
+	ActivityStableID string         `json:"activity_stable_id"`
+	Activity         string         `json:"activity"`
+	Artifact         string         `json:"artifact"`
+	Proof            string         `json:"proof_choice"`
+	Indicator        string         `json:"indicator_class"`
+	Source           SourceLocation `json:"source_location"`
 }
 
 type CaseResult struct {
-	Ordinal           int                  `json:"ordinal"`
-	CaseID            string               `json:"case_id"`
-	Expected          string               `json:"expected_decision"`
-	Decision          string               `json:"decision"`
-	Reason            string               `json:"reason"`
-	Unknown           *UnknownClaim        `json:"unknown,omitempty"`
-	Issues            []Issue              `json:"issues"`
-	StableIDs         []SemanticNodeInput  `json:"semantic_nodes"`
-	ActivityMapping   []ActivityProjection `json:"activity_mapping"`
-	Improvement       ImprovementResult    `json:"improvement"`
-	Utility           UtilityResult        `json:"utility"`
-	FixturePath       string               `json:"fixture_path"`
+	Ordinal         int                  `json:"ordinal"`
+	CaseID          string               `json:"case_id"`
+	Expected        string               `json:"expected_decision"`
+	Decision        string               `json:"decision"`
+	Reason          string               `json:"reason"`
+	Unknown         *UnknownClaim        `json:"unknown,omitempty"`
+	Issues          []Issue              `json:"issues"`
+	StableIDs       []SemanticNodeInput  `json:"semantic_nodes"`
+	ActivityMapping []ActivityProjection `json:"activity_mapping"`
+	Improvement     ImprovementResult    `json:"improvement"`
+	Utility         UtilityResult        `json:"utility"`
+	FixturePath     string               `json:"fixture_path"`
 }
 
 type ImprovementResult struct {
@@ -220,36 +220,36 @@ type LabeledCount struct {
 }
 
 type Inventory struct {
-	DescendantDirs    int  `json:"descendant_dirs"`
-	RegularFiles      int  `json:"regular_files"`
-	GoFiles           int  `json:"go_files"`
-	GoPhysicalLines   int  `json:"go_physical_lines"`
-	GoooFiles         int  `json:"gooo_files"`
-	GoooPhysicalLines int  `json:"gooo_physical_lines"`
-	GeneratedFiles    int  `json:"generated_files"`
-	GeneratedBytes    int  `json:"generated_bytes"`
+	DescendantDirs     int  `json:"descendant_dirs"`
+	RegularFiles       int  `json:"regular_files"`
+	GoFiles            int  `json:"go_files"`
+	GoPhysicalLines    int  `json:"go_physical_lines"`
+	GoooFiles          int  `json:"gooo_files"`
+	GoooPhysicalLines  int  `json:"gooo_physical_lines"`
+	GeneratedFiles     int  `json:"generated_files"`
+	GeneratedBytes     int  `json:"generated_bytes"`
 	RootREADMEExcluded bool `json:"root_readme_excluded"`
 }
 
 type SemanticDenominator struct {
-	Schema                string               `json:"schema"`
-	IRSchema              string               `json:"ir_schema"`
-	SourcePath            string               `json:"source_path"`
-	SourceDigest          string               `json:"source_digest"`
-	GraphID               string               `json:"graph_id"`
-	Release               string               `json:"release"`
-	Authority             map[string]any       `json:"authority"`
-	Precedence            []string             `json:"precedence"`
-	ScenarioDenominator   int                  `json:"scenario_denominator"`
-	StateCounts           StateCounts          `json:"state_counts"`
-	ExpectedStateCounts   StateCounts          `json:"expected_state_counts"`
-	ProofChoices          []LabeledCount       `json:"proof_choices"`
-	IndicatorClasses      []LabeledCount       `json:"indicator_classes"`
-	Activities            []ActivityDecl       `json:"activities"`
-	Cells                 []CellDecl           `json:"cells"`
-	Cases                 []CaseResult         `json:"cases"`
-	OutputArtifacts       []string             `json:"output_artifacts"`
-	Inventory             Inventory            `json:"inventory"`
+	Schema              string         `json:"schema"`
+	IRSchema            string         `json:"ir_schema"`
+	SourcePath          string         `json:"source_path"`
+	SourceDigest        string         `json:"source_digest"`
+	GraphID             string         `json:"graph_id"`
+	Release             string         `json:"release"`
+	Authority           map[string]any `json:"authority"`
+	Precedence          []string       `json:"precedence"`
+	ScenarioDenominator int            `json:"scenario_denominator"`
+	StateCounts         StateCounts    `json:"state_counts"`
+	ExpectedStateCounts StateCounts    `json:"expected_state_counts"`
+	ProofChoices        []LabeledCount `json:"proof_choices"`
+	IndicatorClasses    []LabeledCount `json:"indicator_classes"`
+	Activities          []ActivityDecl `json:"activities"`
+	Cells               []CellDecl     `json:"cells"`
+	Cases               []CaseResult   `json:"cases"`
+	OutputArtifacts     []string       `json:"output_artifacts"`
+	Inventory           Inventory      `json:"inventory"`
 }
 
 type SemanticDistribution struct {
@@ -267,50 +267,50 @@ type SemanticDistribution struct {
 }
 
 type GeneratedAssertion struct {
-	Ordinal       int           `json:"ordinal"`
-	CaseID        string        `json:"case_id"`
-	Expected      string        `json:"expected_decision"`
-	Actual        string        `json:"actual_decision"`
-	Pass          bool          `json:"pass"`
-	Source        SourceLocation `json:"source_location"`
-	Reason        string        `json:"reason"`
-	Unknown       *UnknownClaim `json:"unknown,omitempty"`
-	StableIDs     []string      `json:"stable_ids"`
+	Ordinal   int            `json:"ordinal"`
+	CaseID    string         `json:"case_id"`
+	Expected  string         `json:"expected_decision"`
+	Actual    string         `json:"actual_decision"`
+	Pass      bool           `json:"pass"`
+	Source    SourceLocation `json:"source_location"`
+	Reason    string         `json:"reason"`
+	Unknown   *UnknownClaim  `json:"unknown,omitempty"`
+	StableIDs []string       `json:"stable_ids"`
 }
 
 type ReplayReceipt struct {
-	Schema                 string   `json:"schema"`
-	SourceDigest           string   `json:"source_digest"`
-	NormalInputOrder       []string `json:"normal_input_order"`
+	Schema                   string   `json:"schema"`
+	SourceDigest             string   `json:"source_digest"`
+	NormalInputOrder         []string `json:"normal_input_order"`
 	OrderPerturbedInputOrder []string `json:"order_perturbed_input_order"`
-	NormalDigest           string   `json:"normal_digest"`
-	OrderPerturbedDigest   string   `json:"order_perturbed_digest"`
-	Match                  bool     `json:"match"`
-	State                  string   `json:"state"`
-	Reason                 string   `json:"reason"`
+	NormalDigest             string   `json:"normal_digest"`
+	OrderPerturbedDigest     string   `json:"order_perturbed_digest"`
+	Match                    bool     `json:"match"`
+	State                    string   `json:"state"`
+	Reason                   string   `json:"reason"`
 }
 
 type ProjectionEvent struct {
-	Schema            string         `json:"schema"`
-	CaseOrdinal       int            `json:"case_ordinal"`
-	CaseID            string         `json:"case_id"`
-	CellOrdinal       int            `json:"cell_ordinal"`
-	CellID            string         `json:"cell_id"`
-	ActivityStableID  string         `json:"activity_stable_id"`
-	Activity          string         `json:"activity"`
-	Proof             string         `json:"proof_choice"`
-	Indicator         string         `json:"indicator_class"`
-	Decision          string         `json:"decision"`
-	Source            SourceLocation `json:"source_location"`
+	Schema           string         `json:"schema"`
+	CaseOrdinal      int            `json:"case_ordinal"`
+	CaseID           string         `json:"case_id"`
+	CellOrdinal      int            `json:"cell_ordinal"`
+	CellID           string         `json:"cell_id"`
+	ActivityStableID string         `json:"activity_stable_id"`
+	Activity         string         `json:"activity"`
+	Proof            string         `json:"proof_choice"`
+	Indicator        string         `json:"indicator_class"`
+	Decision         string         `json:"decision"`
+	Source           SourceLocation `json:"source_location"`
 }
 
 type GenerationResult struct {
 	Denominator  SemanticDenominator
-	Distribution  SemanticDistribution
-	Assertions    []GeneratedAssertion
-	Events        []ProjectionEvent
-	Replay        ReplayReceipt
-	Report        string
+	Distribution SemanticDistribution
+	Assertions   []GeneratedAssertion
+	Events       []ProjectionEvent
+	Replay       ReplayReceipt
+	Report       string
 }
 
 func DigestBytes(raw []byte) string {

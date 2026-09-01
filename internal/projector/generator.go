@@ -44,9 +44,9 @@ func Generate(sourcePath, casesPath, outputPath, inventoryRoot string) (Generati
 		replay.Reason = "ORDER_PERTURBED_REPLAY_MISMATCH"
 	}
 	result := GenerationResult{
-		Replay: replay,
+		Replay:     replay,
 		Assertions: buildAssertions(ir, normalResults),
-		Events: buildEvents(normalResults),
+		Events:     buildEvents(normalResults),
 	}
 	result.Denominator = buildDenominator(ir, normalResults, inventory)
 	result.Distribution = buildDistribution(ir, normalResults)
@@ -117,8 +117,8 @@ func outputBytes(result GenerationResult) (map[string][]byte, error) {
 		return nil, err
 	}
 	assertions, err := jsonWithNewline(struct {
-		Schema     string                `json:"schema"`
-		Assertions []GeneratedAssertion  `json:"assertions"`
+		Schema     string               `json:"schema"`
+		Assertions []GeneratedAssertion `json:"assertions"`
 	}{Schema: AssertionSchema, Assertions: result.Assertions})
 	if err != nil {
 		return nil, err
@@ -137,12 +137,12 @@ func outputBytes(result GenerationResult) (map[string][]byte, error) {
 		events.WriteByte('\n')
 	}
 	return map[string][]byte{
-		"semantic-denominator.json": denominator,
+		"semantic-denominator.json":  denominator,
 		"semantic-distribution.json": distribution,
-		"generated-assertions.json": assertions,
-		"projection-events.ndjson": events.Bytes(),
-		"replay-receipt.json": replay,
-		"report.md": []byte(result.Report),
+		"generated-assertions.json":  assertions,
+		"projection-events.ndjson":   events.Bytes(),
+		"replay-receipt.json":        replay,
+		"report.md":                  []byte(result.Report),
 	}, nil
 }
 
@@ -160,11 +160,11 @@ func buildDenominator(ir SemanticIR, results []CaseResult, inventory Inventory) 
 		Schema: DenominatorSchema, IRSchema: ir.Schema, SourcePath: ir.SourcePath, SourceDigest: ir.SourceDigest,
 		GraphID: ir.Graph.GraphID, Release: ir.Graph.Release,
 		Authority: map[string]any{
-			"semantic_graph": "RELEASED_GOOO",
-			"go_role": []string{"PARSER", "EVALUATOR", "GENERATOR", "RUNTIME"},
-			"repository_writes": ir.Graph.RepositoryWrites,
+			"semantic_graph":          "RELEASED_GOOO",
+			"go_role":                 []string{"PARSER", "EVALUATOR", "GENERATOR", "RUNTIME"},
+			"repository_writes":       ir.Graph.RepositoryWrites,
 			"external_required_gates": ir.Graph.ExternalRequiredGates,
-			"caller_owned_output": true,
+			"caller_owned_output":     true,
 		},
 		Precedence: ir.Graph.Precedence, ScenarioDenominator: len(ir.Graph.Cases), StateCounts: stateCounts(results), ExpectedStateCounts: expected,
 		ProofChoices: graphLabelCounts(ir.Graph, "proof"), IndicatorClasses: graphLabelCounts(ir.Graph, "indicator"),
@@ -279,10 +279,10 @@ func buildEvents(results []CaseResult) []ProjectionEvent {
 }
 
 type replayCase struct {
-	Ordinal  int      `json:"ordinal"`
-	CaseID   string   `json:"case_id"`
-	Decision string   `json:"decision"`
-	Issues   []Issue  `json:"issues"`
+	Ordinal   int      `json:"ordinal"`
+	CaseID    string   `json:"case_id"`
+	Decision  string   `json:"decision"`
+	Issues    []Issue  `json:"issues"`
 	StableIDs []string `json:"stable_ids"`
 }
 

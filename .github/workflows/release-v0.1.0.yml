@@ -1,0 +1,125 @@
+name: Immutable v0.1.0 release
+
+on:
+  push:
+    tags: ['v0.1.0']
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: v0.1.0
+      WORK_DIR: /tmp/gooo-semantic-denominator-projector-release-${{ github.run_id }}
+    steps:
+      - name: Checkout annotated tag
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+      - name: Set up Go 1.27
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.27.0'
+          cache: false
+      - name: Verify annotated tag and release lock
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git cat-file -t "$TAG^{tag}")" = tag
+          tag_commit=$(git rev-list -n 1 "$TAG")
+          test "$tag_commit" = "${{ github.sha }}"
+          jq -e '.repository == "kimjooyoon/gooo-semantic-denominator-projector" and .tag == "v0.1.0" and .go == "1.27.0" and .external_required_gates == 0 and .artifact_count == 6 and .root_readme_excluded == true and .immutable_policy.operator_api_attempts == 0' contracts/release-lock-v1.json >/dev/null
+          mkdir -p "$WORK_DIR/main-ci" "$WORK_DIR/assets"
+          echo "TAG_COMMIT=$tag_commit" >> "$GITHUB_ENV"
+      - name: Resolve successful main CI evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          repo="$GITHUB_REPOSITORY"
+          runs=$(gh api --paginate "repos/$repo/actions/runs?event=push&branch=main&per_page=100")
+          main_run=$(jq -c --arg sha "$TAG_COMMIT" '[.workflow_runs[] | select(.name == "Semantic denominator projector CI" and .head_sha == $sha and .event == "push" and .status == "completed" and .conclusion == "success")] | sort_by(.id) | last' <<< "$runs")
+          test "$main_run" != null
+          main_run_id=$(jq -r '.id' <<< "$main_run")
+          artifact_name="gooo-semantic-denominator-projector-evidence-$TAG_COMMIT"
+          artifacts=$(gh api --paginate "repos/$repo/actions/runs/$main_run_id/artifacts?per_page=100")
+          artifact=$(jq -c --arg name "$artifact_name" '[.artifacts[] | select(.name == $name and .expired == false)] | sort_by(.created_at) | last' <<< "$artifacts")
+          test "$artifact" != null
+          artifact_id=$(jq -r '.id' <<< "$artifact")
+          artifact_digest=$(jq -r '.digest' <<< "$artifact")
+          test "$artifact_digest" != null
+          gh api "repos/$repo/actions/artifacts/$artifact_id/zip" > "$WORK_DIR/main-ci-artifact.zip"
+          unzip -q "$WORK_DIR/main-ci-artifact.zip" -d "$WORK_DIR/main-ci"
+          evidence=$(find "$WORK_DIR/main-ci" -type f -name ci-evidence.json -print -quit)
+          denominator=$(find "$WORK_DIR/main-ci" -type f -name semantic-denominator.json -print -quit)
+          test -n "$evidence" && test -n "$denominator"
+          jq -e --arg sha "$TAG_COMMIT" '.subject_sha == $sha and .denominator == {activities:12,artifacts:6,cells:12,scenarios:12,states:{closed:4,refuted:4,total:12,unknown:4},expected_states:{closed:4,refuted:4,total:12,unknown:4},proof_choices:.denominator.proof_choices,indicator_classes:.denominator.indicator_classes} and .authority.repository_writes == 0 and .authority.cross_project_required_gates == 0' "$evidence" >/dev/null
+          jq -e '(.state_counts == {total:12,closed:4,unknown:4,refuted:4}) and ((.output_artifacts|length) == 6)' "$denominator" >/dev/null
+          generated=$(dirname "$denominator")
+          bash scripts/release-assets.sh "$GITHUB_WORKSPACE" "$generated" "$evidence" "$WORK_DIR/assets"
+          echo "MAIN_RUN_ID=$main_run_id" >> "$GITHUB_ENV"
+          echo "MAIN_ARTIFACT_ID=$artifact_id" >> "$GITHUB_ENV"
+          echo "MAIN_ARTIFACT_DIGEST=$artifact_digest" >> "$GITHUB_ENV"
+      - name: Create draft release and capture response ID
+        shell: bash
+        run: |
+          set -euo pipefail
+          repo="$GITHUB_REPOSITORY"
+          set +e
+          response=$(gh api --method POST "repos/$repo/releases" -f tag_name="$TAG" -f target_commitish="$TAG_COMMIT" -f name="$TAG" -f body="Immutable semantic denominator projector release at $TAG_COMMIT. Evidence is sourced from successful main CI run $MAIN_RUN_ID." -F draft=true -F prerelease=false 2>"$WORK_DIR/create-release.error")
+          status=$?
+          set -e
+          if test "$status" -ne 0; then
+            response=$(gh api "repos/$repo/releases/tags/$TAG")
+            jq -e '.draft == true and .immutable == false' <<< "$response" >/dev/null
+          fi
+          release_id=$(jq -r '.id' <<< "$response")
+          test "$release_id" != null && test -n "$release_id"
+          jq -e --arg tag "$TAG" --argjson id "$release_id" '.id == $id and .tag_name == $tag and .draft == true and (.assets|length) == 0' <<< "$response" >/dev/null
+          printf '%s\n' "$release_id" > "$WORK_DIR/release-id"
+          printf '%s\n' "$response" > "$WORK_DIR/release-create-response.json"
+      - name: Upload source, contract, evidence, outputs, and digest
+        shell: bash
+        run: |
+          set -euo pipefail
+          repo="$GITHUB_REPOSITORY"
+          release_id=$(cat "$WORK_DIR/release-id")
+          for asset_path in "$WORK_DIR/assets"/*; do
+            asset=$(basename "$asset_path")
+            upload_url="https://uploads.github.com/repos/$repo/releases/$release_id/assets?name=$asset"
+            curl --fail --silent --show-error -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" -H "Content-Type: application/octet-stream" --data-binary "@$asset_path" "$upload_url" > "$WORK_DIR/upload-$asset.json"
+          done
+      - name: Publish release exactly once
+        shell: bash
+        run: |
+          set -euo pipefail
+          repo="$GITHUB_REPOSITORY"
+          release_id=$(cat "$WORK_DIR/release-id")
+          gh api --method PATCH "repos/$repo/releases/$release_id" -F draft=false -F prerelease=false > "$WORK_DIR/final-release.json"
+      - name: Verify immutable public release and asset digests
+        shell: bash
+        run: |
+          set -euo pipefail
+          repo="$GITHUB_REPOSITORY"
+          release_id=$(cat "$WORK_DIR/release-id")
+          jq -e --arg tag "$TAG" --arg commit "$TAG_COMMIT" --argjson id "$release_id" '.id == $id and .tag_name == $tag and .draft == false and .immutable == true' "$WORK_DIR/final-release.json" >/dev/null
+          assets=$(gh api "repos/$repo/releases/$release_id/assets?per_page=100")
+          test "$(jq 'length' <<< "$assets")" = "10"
+          for asset_path in "$WORK_DIR/assets"/*; do
+            asset=$(basename "$asset_path")
+            local_size=$(wc -c < "$asset_path" | tr -d ' ')
+            local_digest="sha256:$(sha256sum "$asset_path" | awk '{print $1}')"
+            server_size=$(jq -r --arg name "$asset" '.[] | select(.name == $name) | .size' <<< "$assets")
+            server_digest=$(jq -r --arg name "$asset" '.[] | select(.name == $name) | .digest' <<< "$assets")
+            test "$server_size" = "$local_size"
+            test "$server_digest" = "$local_digest"
+            asset_id=$(jq -r --arg name "$asset" '.[] | select(.name == $name) | .id' <<< "$assets")
+            gh api -H 'Accept: application/octet-stream' "repos/$repo/releases/assets/$asset_id" > "$WORK_DIR/download-$asset"
+            test "$(sha256sum "$WORK_DIR/download-$asset" | awk '{print $1}')" = "$(sha256sum "$asset_path" | awk '{print $1}')"
+          done
+          jq -S -n --arg tag "$TAG" --arg commit "$TAG_COMMIT" --argjson release_id "$release_id" --arg main_run "$MAIN_RUN_ID" --arg main_artifact "$MAIN_ARTIFACT_ID" --arg main_digest "$MAIN_ARTIFACT_DIGEST" --slurpfile release "$WORK_DIR/final-release.json" --slurpfile evidence "$WORK_DIR/assets/ci-evidence.json" '{schema:"gooo/semantic-denominator-projector/release-receipt/v1",tag:$tag,commit_sha:$commit,release_id:$release_id,release_immutable:($release[0].immutable),main_ci:{run_id:($main_run|tonumber),artifact_id:($main_artifact|tonumber),artifact_digest:$main_digest},assets:($release[0].assets|map({id,name,size,digest})),authority:$evidence[0].authority,operator_immutable_api_attempts:0}' > "$WORK_DIR/release-receipt.json"
+          cat "$WORK_DIR/release-receipt.json"

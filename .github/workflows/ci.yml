@@ -1,0 +1,105 @@
+name: Semantic denominator projector CI
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
+
+jobs:
+  validation:
+    name: Go 1.27 semantic conformance
+    runs-on: ubuntu-latest
+    env:
+      SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - name: Checkout subject
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.SUBJECT_SHA }}
+          fetch-depth: 0
+      - name: Set up Go 1.27
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.27.0'
+          cache: false
+      - name: Verify declared toolchain
+        run: test "$(go env GOVERSION)" = "go1.27.0"
+      - name: Verify Go formatting
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=$(gofmt -l $(git ls-files '*.go'))
+          test -z "$files"
+      - name: Prepare caller-owned directories
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "METRICS_DIR=$RUNNER_TEMP/gooo-semantic-denominator-projector-metrics-${{ github.run_id }}" >> "$GITHUB_ENV"
+          echo "OUTPUT_DIR=$RUNNER_TEMP/gooo-semantic-denominator-projector-output-${{ github.run_id }}" >> "$GITHUB_ENV"
+          echo "EVIDENCE_DIR=$RUNNER_TEMP/gooo-semantic-denominator-projector-evidence-${{ github.run_id }}" >> "$GITHUB_ENV"
+          echo "BIN=$RUNNER_TEMP/gooo-semantic-denominator-projector-${{ github.run_id }}" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/gooo-semantic-denominator-projector-metrics-${{ github.run_id }}" "$RUNNER_TEMP/gooo-semantic-denominator-projector-output-${{ github.run_id }}" "$RUNNER_TEMP/gooo-semantic-denominator-projector-evidence-${{ github.run_id }}"
+      - name: Measure compile
+        run: bash scripts/measure-step.sh "$METRICS_DIR/compile.metrics" go test -run '^$' ./...
+      - name: Run vet
+        run: go vet ./...
+      - name: Measure tests
+        run: bash scripts/measure-step.sh "$METRICS_DIR/test.metrics" go test ./...
+      - name: Measure build
+        run: bash scripts/measure-step.sh "$METRICS_DIR/build.metrics" go build -trimpath -o "$BIN" ./cmd/projector
+      - name: Syntax and graph check
+        run: |
+          "$BIN" check --source .gooo/semantic-denominator-projector.gooo --cases fixtures/cases
+      - name: Measure semantic conformance
+        run: bash scripts/measure-step.sh "$METRICS_DIR/conformance.metrics" bash scripts/conformance.sh "$BIN" "$GITHUB_WORKSPACE" "$OUTPUT_DIR"
+      - name: Measure integration and write boundary
+        run: bash scripts/measure-step.sh "$METRICS_DIR/integration.metrics" bash scripts/integration.sh "$BIN" "$GITHUB_WORKSPACE"
+      - name: Verify generated contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(find "$OUTPUT_DIR" -maxdepth 1 -type f | wc -l | tr -d ' ')" = "6"
+          jq -e '
+            .schema == "gooo/semantic-denominator-projector/semantic-denominator/v1" and
+            .scenario_denominator == 12 and
+            .state_counts == {total:12,closed:4,unknown:4,refuted:4} and
+            .expected_state_counts == .state_counts and
+            ([.activities[]]|length) == 12 and ([.cells[]]|length) == 12 and
+            ([.output_artifacts[]]|length) == 6 and
+            ([.proof_choices[]|select(.total==4)]|length) == 3 and
+            ([.indicator_classes[]|select(.total==4)]|length) == 3 and
+            .authority.repository_writes == 0 and .authority.external_required_gates == 0
+          ' "$OUTPUT_DIR/semantic-denominator.json" >/dev/null
+          jq -e '
+            .schema == "gooo/semantic-denominator-projector/generated-assertions/v1" and
+            ([.assertions[]|select(.pass == true)]|length) == 12 and
+            ([.assertions[]|select(.actual_decision == "UNKNOWN" and (.unknown|type == "object") and (.unknown|keys|sort == ["blocked_by","next_operation","reason","stage","step","unknown_class"]))]|length) == 4
+          ' "$OUTPUT_DIR/generated-assertions.json" >/dev/null
+          jq -e '.match == true and .state == "CLOSED" and .normal_digest == .order_perturbed_digest' "$OUTPUT_DIR/replay-receipt.json" >/dev/null
+      - name: Write exact CI evidence
+        run: bash scripts/ci-evidence.sh "$GITHUB_WORKSPACE" "$OUTPUT_DIR" "$METRICS_DIR" "$EVIDENCE_DIR/ci-evidence.json" "$SUBJECT_SHA" "${{ runner.os }}/ubuntu-latest" "$(go env GOVERSION)"
+      - name: Verify CI evidence fields
+        shell: bash
+        run: |
+          set -euo pipefail
+          jq -e '
+            .tests == {total:12,selected:12,executed:12,reused:0,failed:0,unknown:0} and
+            .denominator == {activities:12,artifacts:6,cells:12,scenarios:12,states:{closed:4,refuted:4,total:12,unknown:4},expected_states:{closed:4,refuted:4,total:12,unknown:4},proof_choices:.denominator.proof_choices,indicator_classes:.denominator.indicator_classes} and
+            ([.metrics[]|.wall_ms,.peak_rss_kib]|all(type == "number" and . > 0)) and
+            .inventory.generated_files == 6 and .inventory.generated_bytes > 0 and
+            .authority.repository_writes == 0 and .authority.cross_project_required_gates == 0 and
+            .authority.local_execution == {build:0,conformance:0,diff:0,generate:0,integration:0,syntax:0,test:0,vet:0} and
+            .operational_refuted.local_validation_commands == 1
+          ' "$EVIDENCE_DIR/ci-evidence.json" >/dev/null
+      - name: Add report to step summary
+        run: cat "$OUTPUT_DIR/report.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Verify repository remained unchanged
+        run: git diff --exit-code -- .
+      - name: Upload conformance evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: gooo-semantic-denominator-projector-evidence-${{ env.SUBJECT_SHA }}
+          path: |
+            ${{ env.OUTPUT_DIR }}
+            ${{ env.EVIDENCE_DIR }}/ci-evidence.json
+          if-no-files-found: error

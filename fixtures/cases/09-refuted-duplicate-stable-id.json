@@ -1,0 +1,10 @@
+{
+  "case_id": "refuted-duplicate-stable-id",
+  "expected_decision": "REFUTED",
+  "top_level_decision": "REFUTED",
+  "observed_denominator": 12,
+  "observed_activities": ["ParseSemanticGraph", "BindStableSemanticIDs", "BindSemanticEvidence", "EstablishDenominator", "SelectProofDistribution", "SelectIndicatorDistribution", "ProjectActivityMapping", "ClassifyUnknownCoverage", "ClassifyRefutedCoverage", "ProjectAssertions", "ProjectReport", "VerifyDeterministicReplay"],
+  "semantic_nodes": [{"stable_id": "node:duplicate", "kind": "semantic-node", "source_location": {"path": "fixtures/cases/09-refuted-duplicate-stable-id.json", "line": 1, "column": 1}}, {"stable_id": "node:duplicate", "kind": "semantic-node", "source_location": {"path": "fixtures/cases/09-refuted-duplicate-stable-id.json", "line": 1, "column": 2}}],
+  "external_user_utility_evidence": true,
+  "improvement": {"before": 12, "after": 12, "scenario": "refuted-duplicate-stable-id", "source_digest": "d55994e252915558beaca61666e77946f10e61fb294cee6d7e29e4ce5b3d275c", "contract_digest": "d55994e252915558beaca61666e77946f10e61fb294cee6d7e29e4ce5b3d275c", "fixture": "09-refuted-duplicate-stable-id.json", "toolchain": "go1.27.0", "runner": "github-actions/ubuntu-latest"}
+}

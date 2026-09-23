@@ -240,12 +240,14 @@ func validateGraph(graph SemanticGraph) error {
 		activityByName[activity.Name] = activity
 	}
 	cellOrdinals := map[int]bool{}
+	cellIDs := map[string]bool{}
 	boundActivities := map[string]int{}
 	for index, cell := range graph.Cells {
 		if cell.Ordinal != index+1 || cellOrdinals[cell.Ordinal] {
 			return errors.New("cell ordinals must be unique and contiguous")
 		}
 		cellOrdinals[cell.Ordinal] = true
+		cellIDs[cell.StableID] = true
 		activity, exists := activityByName[cell.Activity]
 		if !exists {
 			return fmt.Errorf("cell %s refers to missing activity %s", cell.StableID, cell.Activity)
@@ -290,6 +292,9 @@ func validateGraph(graph SemanticGraph) error {
 		rule, exists := graph.Rules[ruleID]
 		if !exists || rule.Cell == "" {
 			return fmt.Errorf("graph is missing rule %s", ruleID)
+		}
+		if !cellIDs[rule.Cell] {
+			return fmt.Errorf("rule %s refers to missing cell %s", ruleID, rule.Cell)
 		}
 	}
 	return nil

@@ -23,7 +23,7 @@ func TestPhysicalLines(t *testing.T) {
 		t.Fatalf("got %d lines, want 2", got)
 	}
 	if got := physicalLines([]byte("one\ntwo")); got != 2 {
-		 t.Fatalf("got %d lines, want 2", got)
+		t.Fatalf("got %d lines, want 2", got)
 	}
 }
 

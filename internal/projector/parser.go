@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -326,6 +327,13 @@ func LoadCases(directory string, graph SemanticGraph) ([]CaseInput, error) {
 		decoder.DisallowUnknownFields()
 		if err := decoder.Decode(&input); err != nil {
 			return nil, fmt.Errorf("decode %s: %w", name, err)
+		}
+		var trailing json.RawMessage
+		if err := decoder.Decode(&trailing); err != io.EOF {
+			if err == nil {
+				return nil, fmt.Errorf("decode %s: trailing JSON value", name)
+			}
+			return nil, fmt.Errorf("decode %s trailing content: %w", name, err)
 		}
 		if input.CaseID == "" {
 			return nil, fmt.Errorf("fixture %s has no case_id", name)

@@ -118,8 +118,8 @@ func parseGraph(path string, raw []byte) (SemanticGraph, error) {
 			if err != nil {
 				return SemanticGraph{}, err
 			}
-			if _, exists := graph.Rules[rule.StableID]; exists {
-				return SemanticGraph{}, fmt.Errorf("line %d: duplicate rule %s", lineNumber, rule.StableID)
+			if err := registerStableID(seenStableIDs, rule.StableID, "rule", lineNumber); err != nil {
+				return SemanticGraph{}, err
 			}
 			graph.Rules[rule.StableID] = rule
 		case "case":

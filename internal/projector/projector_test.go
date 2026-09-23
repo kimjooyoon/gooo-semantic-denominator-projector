@@ -3,6 +3,7 @@ package projector
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 )
 
@@ -55,5 +56,19 @@ func TestLoadCasesRejectsTrailingJSONValue(t *testing.T) {
 	}
 	if _, err := LoadCases(tempDir, ir.Graph); err == nil {
 		t.Fatal("LoadCases accepted a fixture with a trailing JSON value")
+	}
+}
+
+func TestBuildEventsIsIndependentOfCaseInputOrder(t *testing.T) {
+	first := CaseResult{CaseID: "case-b", ActivityMapping: []ActivityProjection{{CellID: "cell-b", ActivityStableID: "activity-b"}}}
+	second := CaseResult{CaseID: "case-a", ActivityMapping: []ActivityProjection{{CellID: "cell-a", ActivityStableID: "activity-a"}}}
+
+	forward := buildEvents([]CaseResult{first, second})
+	reversed := buildEvents([]CaseResult{second, first})
+	if !reflect.DeepEqual(forward, reversed) {
+		t.Fatalf("event order depends on case input order: forward=%v reversed=%v", forward, reversed)
+	}
+	if len(forward) != 2 || forward[0].CaseID != "case-a" || forward[1].CaseID != "case-b" {
+		t.Fatalf("events were not canonically ordered: %v", forward)
 	}
 }

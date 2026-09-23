@@ -275,6 +275,18 @@ func buildEvents(results []CaseResult) []ProjectionEvent {
 			})
 		}
 	}
+	sort.Slice(events, func(left, right int) bool {
+		if events[left].CaseID != events[right].CaseID {
+			return events[left].CaseID < events[right].CaseID
+		}
+		if events[left].CellID != events[right].CellID {
+			return events[left].CellID < events[right].CellID
+		}
+		if events[left].ActivityStableID != events[right].ActivityStableID {
+			return events[left].ActivityStableID < events[right].ActivityStableID
+		}
+		return events[left].Source.Path < events[right].Source.Path
+	})
 	return events
 }
 
